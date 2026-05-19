@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transaction Query — Your Firm</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f5f6fa;color:#1a1a2e;font-size:14px;line-height:1.5}
+
+/* Header */
+.hdr{background:#fff;border-bottom:1px solid #e2e8f0;padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:70px;position:sticky;top:0;z-index:100;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.hdr-left{display:flex;align-items:center;gap:14px}
+/* ── Replace .logo div with your logo img tag ──
+   <img src="your-logo.png" style="height:42px;width:auto" alt="Logo">  */
+.logo{height:42px;display:flex;align-items:center;background:#f0f4ff;border:2px dashed #aab4d4;border-radius:8px;padding:0 14px;color:#6b7eb8;font-size:12px;font-weight:700;min-width:130px}
+.tagline{font-size:12px;color:#94a3b8;border-left:1px solid #e2e8f0;padding-left:14px}
+.hdr-right{font-size:12px;color:#64748b;text-align:right}
+
+/* Token screen */
+.token-wrap{min-height:calc(100vh - 70px);display:flex;align-items:center;justify-content:center;padding:24px}
+.token-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:48px 36px;max-width:440px;width:100%;text-align:center}
+.token-card .icon{font-size:44px;margin-bottom:16px}
+.token-card h2{font-size:21px;font-weight:600;margin-bottom:8px}
+.token-card p{color:#64748b;font-size:14px;line-height:1.6;margin-bottom:28px}
+.token-input{width:100%;padding:12px 16px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:17px;font-family:inherit;text-align:center;letter-spacing:.08em;margin-bottom:10px;transition:border-color .2s}
+.token-input:focus{outline:none;border-color:#4f7cf7;box-shadow:0 0 0 3px rgba(79,124,247,.12)}
+.token-err{color:#dc2626;font-size:13px;margin-bottom:10px;min-height:18px}
+.btn-main{width:100%;padding:12px 24px;background:#4f7cf7;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .2s}
+.btn-main:hover{background:#3b6be0}
+.btn-main:disabled{background:#94a3b8;cursor:not-allowed}
+
+/* Loading */
+.loading{display:none;text-align:center;padding:80px 24px;color:#64748b}
+.spinner{width:36px;height:36px;border:3px solid #e2e8f0;border-top-color:#4f7cf7;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Main page */
+.page{max-width:980px;margin:0 auto;padding:28px 20px 80px;display:none}
+
+/* Intro */
+.intro{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:26px 28px;margin-bottom:22px}
+.intro h1{font-size:19px;font-weight:600;margin-bottom:6px}
+.intro p{color:#64748b;font-size:14px;line-height:1.6;max-width:620px}
+.meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:18px;padding-top:18px;border-top:1px solid #f1f5f9}
+.meta-item label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin-bottom:3px}
+.meta-item span{font-size:13px;font-weight:500;color:#1e293b}
+
+/* Progress */
+.prog-label{font-size:12px;color:#64748b;margin-bottom:7px}
+.prog-wrap{background:#e2e8f0;border-radius:99px;height:5px;margin-bottom:22px;overflow:hidden}
+.prog-fill{background:#4f7cf7;height:100%;border-radius:99px;transition:width .4s}
+
+/* Transaction cards */
+.tx-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:14px;overflow:hidden}
+.tx-head{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:13px 18px;background:#f8fafc;border-bottom:1px solid #e2e8f0}
+.tx-num{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.tx-desc{font-size:14px;font-weight:600;color:#1e293b;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:10px;font-weight:700;white-space:nowrap}
+.b-in{background:#d1fae5;color:#065f46}
+.b-out{background:#fee2e2;color:#991b1b}
+.tx-amt{font-size:16px;font-weight:700;white-space:nowrap}
+.c-in{color:#059669}.c-out{color:#dc2626}
+.tx-meta{display:flex;flex-wrap:wrap;gap:14px;padding:7px 18px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:11px;color:#64748b}
+.tx-meta b{color:#334155}
+.tx-body{padding:16px 18px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:520px){.tx-body{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.05em}
+.field select,.field textarea{width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;font-family:inherit;color:#1e293b;background:#fff}
+.field select:focus,.field textarea:focus{outline:none;border-color:#4f7cf7;box-shadow:0 0 0 3px rgba(79,124,247,.12)}
+.field textarea{resize:vertical;min-height:64px}
+.staff-note{grid-column:1/-1;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:9px 13px;font-size:13px;color:#92400e}
+.staff-note b{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#b45309;margin-bottom:2px}
+
+/* Submit */
+.submit-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:26px 28px;margin-top:24px}
+.submit-card h2{font-size:16px;font-weight:600;margin-bottom:6px}
+.submit-card p{color:#64748b;font-size:13px;margin-bottom:18px}
+.sub-btn{display:inline-flex;align-items:center;gap:8px;background:#4f7cf7;color:#fff;border:none;border-radius:8px;padding:12px 26px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer}
+.sub-btn:hover{background:#3b6be0}
+.sub-btn:disabled{background:#94a3b8;cursor:not-allowed}
+.val-err{color:#dc2626;font-size:13px;margin-top:10px;display:none}
+
+/* Success */
+.success{display:none;text-align:center;padding:80px 24px}
+.success .icon{font-size:52px;margin-bottom:16px}
+.success h2{font-size:22px;font-weight:700;margin-bottom:8px}
+.success p{color:#64748b;font-size:14px}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="logo">YOUR FIRM LOGO</div>
+    <span class="tagline">Bookkeeping &amp; Accounting</span>
+  </div>
+  <div class="hdr-right" id="hdr-info"></div>
+</div>
+
+<!-- Token entry -->
+<div id="token-screen" class="token-wrap">
+  <div class="token-card">
+    <div class="icon">🔐</div>
+    <h2>Enter your access code</h2>
+    <p>Your accountant has sent you a unique access code. Enter it below to view and respond to your transaction queries.</p>
+    <input id="token-input" class="token-input" type="text" placeholder="Paste your code here" autocomplete="off" spellcheck="false"
+      onkeydown="if(event.key==='Enter')loadData()">
+    <div id="token-err" class="token-err"></div>
+    <button class="btn-main" id="load-btn" onclick="loadData()">View my transactions &rarr;</button>
+  </div>
+</div>
+
+<!-- Loading -->
+<div id="loading" class="loading">
+  <div class="spinner"></div>
+  <p>Loading your transactions…</p>
+</div>
+
+<!-- Main -->
+<div id="main-page" class="page">
+  <div class="intro">
+    <h1>Transaction Query</h1>
+    <p>We have identified the transactions below that need your input. Please select the correct category for each one and add any relevant notes. When you are done, click <strong>Submit all responses</strong>.</p>
+    <div class="meta-grid">
+      <div class="meta-item"><label>Client</label><span id="m-name"></span></div>
+      <div class="meta-item"><label>Company</label><span id="m-co"></span></div>
+      <div class="meta-item"><label>Client ID</label><span id="m-id"></span></div>
+      <div class="meta-item"><label>Accounting period</label><span id="m-period"></span></div>
+      <div class="meta-item"><label>Bank</label><span id="m-bank"></span></div>
+      <div class="meta-item"><label>Your accountant</label><span id="m-staff"></span></div>
+    </div>
+  </div>
+
+  <div class="prog-label" id="prog-label">0 of 0 categorised</div>
+  <div class="prog-wrap"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+
+  <div id="tx-list"></div>
+
+  <div class="submit-card">
+    <h2>Ready to submit?</h2>
+    <p>Please ensure every transaction has a category selected. Use the notes box for anything that needs explaining.</p>
+    <button class="sub-btn" id="sub-btn" onclick="submitAll()">&#10003;&nbsp; Submit all responses</button>
+    <div class="val-err" id="val-err">Please select a category for every transaction before submitting.</div>
+  </div>
+</div>
+
+<!-- Success -->
+<div id="success" class="success">
+  <div class="icon">✅</div>
+  <h2>Thank you — all done!</h2>
+  <p>We have received your responses and will update your records shortly.<br>You can now close this page.</p>
+</div>
+
+<script>
+// ================================================================
+//  PASTE YOUR APPS SCRIPT WEB APP URL BELOW
+//  (Deploy → New deployment → Web app → copy the URL)
+// ================================================================
+var API = "https://script.google.com/macros/s/AKfycbxVRFeWKH-xHs7dOspKBT3rC_wef3u7BVH0DV2hOg6jXetjyiMJsYnJ3vHKJeZKzp4J/exec";
+// ================================================================
+
+var TOKEN = "", txData = [], cats = {};
+
+// Auto-load if token is in URL e.g. ?token=abc123
+(function(){
+  var t = new URLSearchParams(location.search).get("token");
+  if(t){ document.getElementById("token-input").value = t; loadData(); }
+})();
+
+function show(id){
+  ["token-screen","loading","main-page","success"].forEach(function(s){
+    var el = document.getElementById(s);
+    el.style.display = (s===id) ? (s==="main-page"?"block":"flex") : "none";
+    if(s==="loading"&&id==="loading") el.style.display="block";
+    if(s==="success"&&id==="success") el.style.display="block";
+  });
+}
+
+function loadData(){
+  var t = document.getElementById("token-input").value.trim();
+  if(!t){ document.getElementById("token-err").textContent="Please enter your access code."; return; }
+  TOKEN = t;
+  document.getElementById("token-err").textContent="";
+  document.getElementById("load-btn").disabled=true;
+  show("loading");
+
+  fetch(API+"?token="+encodeURIComponent(t))
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.error){ show("token-screen"); document.getElementById("token-err").textContent=d.error; document.getElementById("load-btn").disabled=false; return; }
+      txData=d.transactions; cats=d.categories;
+      fillMeta(d.client);
+      buildCards();
+      show("main-page");
+    })
+    .catch(function(){ show("token-screen"); document.getElementById("token-err").textContent="Connection failed. Please try again or contact your accountant."; document.getElementById("load-btn").disabled=false; });
+}
+
+function fillMeta(c){
+  document.getElementById("hdr-info").innerHTML='<div style="font-weight:600;color:#1e293b">'+esc(c.clientName)+'</div><div>'+esc(c.accountingPeriod)+'</div>';
+  document.getElementById("m-name").textContent   = c.clientName||"—";
+  document.getElementById("m-co").textContent     = c.companyName||"—";
+  document.getElementById("m-id").textContent     = c.clientId||"—";
+  document.getElementById("m-period").textContent = c.accountingPeriod||"—";
+  document.getElementById("m-bank").textContent   = c.bankName||"—";
+  document.getElementById("m-staff").textContent  = c.staffName||"—";
+}
+
+function buildCards(){
+  var list = document.getElementById("tx-list");
+  list.innerHTML="";
+  txData.forEach(function(tx,i){
+    var isIn = tx.type.toLowerCase()==="in";
+    var opts = (isIn?cats.in:cats.out).map(function(c){return '<option value="'+esc(c)+'">'+esc(c)+'</option>';}).join("");
+    var sn   = tx.staffNotes ? '<div class="staff-note" style="grid-column:1/-1"><b>Note from your accountant</b>'+esc(tx.staffNotes)+'</div>' : "";
+    var div  = document.createElement("div");
+    div.className="tx-card";
+    div.innerHTML=
+      '<div class="tx-head">'+
+        '<span class="tx-num">Txn '+(i+1)+'</span>'+
+        '<span class="tx-desc" title="'+esc(tx.description)+'">'+esc(tx.description)+'</span>'+
+        '<span class="badge '+(isIn?"b-in":"b-out")+'">'+(isIn?"Money in":"Money out")+'</span>'+
+        '<span class="tx-amt '+(isIn?"c-in":"c-out")+'">'+(isIn?"+":"−")+' '+esc(tx.currency)+' '+esc(String(tx.amount))+'</span>'+
+      '</div>'+
+      '<div class="tx-meta">'+
+        '<span><b>Date</b> '+esc(tx.date)+'</span>'+
+        '<span><b>Bank</b> '+esc(tx.bankName)+'</span>'+
+        '<span><b>Account</b> '+esc(tx.accountNo)+'</span>'+
+        '<span><b>Ref</b> '+esc(tx.txId)+'</span>'+
+      '</div>'+
+      '<div class="tx-body">'+
+        '<div class="field"><label>Category</label>'+
+          '<select id="cat'+i+'" onchange="updateProgress()"><option value="">— Select category —</option>'+opts+'</select></div>'+
+        '<div class="field"><label>Notes (optional)</label>'+
+          '<textarea id="note'+i+'" placeholder="Add any context that helps us…"></textarea></div>'+
+        sn+
+      '</div>';
+    list.appendChild(div);
+  });
+  updateProgress();
+}
+
+function updateProgress(){
+  var done=0;
+  txData.forEach(function(_,i){ if(document.getElementById("cat"+i).value) done++; });
+  var pct=txData.length?Math.round(done/txData.length*100):0;
+  document.getElementById("prog-fill").style.width=pct+"%";
+  document.getElementById("prog-label").textContent=done+" of "+txData.length+" transaction"+(txData.length!==1?"s":"")+" categorised";
+}
+
+function submitAll(){
+  var responses=[], ok=true;
+  txData.forEach(function(tx,i){
+    var cat=document.getElementById("cat"+i).value;
+    var note=document.getElementById("note"+i).value;
+    if(!cat) ok=false;
+    responses.push({txId:tx.txId,date:tx.date,description:tx.description,amount:tx.amount,type:tx.type,category:cat,notes:note});
+  });
+  if(!ok){ document.getElementById("val-err").style.display="block"; window.scrollTo({top:0,behavior:"smooth"}); return; }
+  document.getElementById("val-err").style.display="none";
+  var btn=document.getElementById("sub-btn");
+  btn.disabled=true; btn.textContent="Submitting…";
+
+  fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:TOKEN,responses:responses})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.success){ show("success"); }
+      else{ btn.disabled=false; btn.innerHTML="&#10003;&nbsp; Submit all responses"; alert("Error: "+(d.error||"Unknown error. Please try again.")); }
+    })
+    .catch(function(){ btn.disabled=false; btn.innerHTML="&#10003;&nbsp; Submit all responses"; alert("Connection failed. Please try again or contact your accountant."); });
+}
+
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+</script>
+</body>
+</html>
