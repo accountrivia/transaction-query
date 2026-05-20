@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Staff Portal — Accountrivia</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f5f6fa;color:#1a1a2e;font-size:14px;line-height:1.5}
+
+/* ── Header ── */
+.hdr{background:#1a1a2e;padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:62px;position:sticky;top:0;z-index:200}
+.hdr-left{display:flex;align-items:center;gap:12px}
+.hdr-logo{height:36px;width:auto}
+.hdr-title{color:#fff;font-size:14px;font-weight:600;border-left:1px solid #334155;padding-left:12px}
+.hdr-badge{background:#4f7cf7;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;letter-spacing:.04em}
+.hdr-right{display:flex;align-items:center;gap:12px}
+.hdr-user{color:#94a3b8;font-size:12px;text-align:right}
+.hdr-user strong{display:block;color:#e2e8f0;font-size:13px}
+.logout-btn{background:transparent;border:1px solid #334155;color:#94a3b8;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:inherit}
+.logout-btn:hover{border-color:#64748b;color:#e2e8f0}
+
+/* ── Login screen ── */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.login-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:48px 40px;max-width:420px;width:100%}
+.login-card .firm-logo{height:44px;margin-bottom:24px}
+.login-card h2{font-size:22px;font-weight:700;margin-bottom:6px}
+.login-card p{color:#64748b;font-size:14px;margin-bottom:28px}
+.field-wrap{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.field-wrap label{font-size:12px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.05em}
+.field-wrap input,.field-wrap select,.field-wrap textarea{width:100%;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:inherit;color:#1e293b;background:#fff;transition:border-color .2s}
+.field-wrap input:focus,.field-wrap select:focus,.field-wrap textarea:focus{outline:none;border-color:#4f7cf7;box-shadow:0 0 0 3px rgba(79,124,247,.1)}
+.field-wrap textarea{resize:vertical;min-height:70px}
+.err-msg{color:#dc2626;font-size:13px;margin-bottom:12px;min-height:18px}
+.btn-primary{width:100%;padding:12px;background:#4f7cf7;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .2s}
+.btn-primary:hover{background:#3b6be0}
+.btn-primary:disabled{background:#94a3b8;cursor:not-allowed}
+
+/* ── Layout ── */
+.layout{display:flex;min-height:calc(100vh - 62px)}
+.sidebar{width:220px;background:#fff;border-right:1px solid #e2e8f0;padding:20px 0;flex-shrink:0;position:sticky;top:62px;height:calc(100vh - 62px);overflow-y:auto}
+.nav-section{padding:0 12px;margin-bottom:4px}
+.nav-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;padding:8px 8px 4px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;cursor:pointer;color:#475569;font-size:13px;font-weight:500;transition:background .15s}
+.nav-item:hover{background:#f8fafc;color:#1e293b}
+.nav-item.active{background:#eff6ff;color:#4f7cf7;font-weight:600}
+.nav-item .icon{font-size:15px;width:18px;text-align:center}
+.content{flex:1;padding:28px 24px;min-width:0}
+
+/* ── Page header ── */
+.page-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:12px;flex-wrap:wrap}
+.page-head h1{font-size:20px;font-weight:700}
+.page-head p{color:#64748b;font-size:13px;margin-top:3px}
+.btn-sm{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:background .2s}
+.btn-blue{background:#4f7cf7;color:#fff}.btn-blue:hover{background:#3b6be0}
+.btn-red{background:#fee2e2;color:#dc2626}.btn-red:hover{background:#fecaca}
+.btn-green{background:#d1fae5;color:#059669}.btn-green:hover{background:#a7f3d0}
+.btn-outline{background:#fff;color:#475569;border:1px solid #e2e8f0}.btn-outline:hover{background:#f8fafc}
+.btn-sm:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── Stats bar ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px}
+.stat-card .num{font-size:28px;font-weight:700;color:#1e293b;margin-bottom:2px}
+.stat-card .lbl{font-size:12px;color:#64748b}
+
+/* ── Table ── */
+.tbl-wrap{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
+.tbl-toolbar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #e2e8f0;flex-wrap:wrap;gap:10px}
+.tbl-toolbar h3{font-size:14px;font-weight:600}
+.search-input{padding:7px 12px;border:1px solid #e2e8f0;border-radius:7px;font-size:13px;font-family:inherit;width:220px}
+.search-input:focus{outline:none;border-color:#4f7cf7}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead tr{background:#f8fafc}
+th{padding:10px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;white-space:nowrap}
+td{padding:12px 14px;border-bottom:1px solid #f1f5f9;color:#334155;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbfc}
+.td-actions{display:flex;align-items:center;gap:6px}
+
+/* ── Status badges ── */
+.badge{display:inline-block;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:700;white-space:nowrap}
+.b-pending{background:#fef9c3;color:#854d0e}
+.b-sent{background:#dbeafe;color:#1e40af}
+.b-responded{background:#d1fae5;color:#065f46}
+.b-admin{background:#f3e8ff;color:#7c3aed}
+.b-staff{background:#f0f9ff;color:#0369a1}
+.b-active{background:#d1fae5;color:#065f46}
+.b-inactive{background:#fee2e2;color:#991b1b}
+
+/* ── Modal ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;padding:20px}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:14px;padding:28px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto}
+.modal h2{font-size:17px;font-weight:700;margin-bottom:18px}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+
+/* ── Loading / empty ── */
+.loading{text-align:center;padding:48px;color:#64748b}
+.spinner{width:30px;height:30px;border:3px solid #e2e8f0;border-top-color:#4f7cf7;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:48px;color:#94a3b8}
+.empty .icon{font-size:36px;margin-bottom:10px}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:24px;right:24px;background:#1e293b;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;z-index:1000;display:none;max-width:340px;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.toast.show{display:block;animation:fadeIn .2s}
+.toast.err{background:#dc2626}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Responses panel ── */
+.res-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 0;border-bottom:1px solid #f1f5f9}
+.res-row:last-child{border-bottom:none}
+.res-label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;margin-bottom:2px}
+.res-val{font-size:13px;color:#1e293b;font-weight:500}
+.res-cat{color:#059669;font-weight:600}
+
+@media(max-width:700px){.sidebar{display:none}.stats{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN ──────────────────────────────────────────────────── -->
+<div id="login-screen" class="login-wrap">
+  <div class="login-card">
+    <img src="Mono.png" style="height:44px;width:auto;margin-bottom:24px" alt="Accountrivia">
+    <h2>Staff Portal</h2>
+    <p>Sign in with your Accountrivia email and password.</p>
+    <div class="field-wrap">
+      <label>Email</label>
+      <input id="login-email" type="email" placeholder="you@accountrivia.com" autocomplete="email">
+    </div>
+    <div class="field-wrap">
+      <label>Password</label>
+      <input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="err-msg" id="login-err"></div>
+    <button class="btn-primary" id="login-btn" onclick="doLogin()">Sign in</button>
+  </div>
+</div>
+
+<!-- ── APP ────────────────────────────────────────────────────── -->
+<div id="app" style="display:none">
+
+  <!-- Header -->
+  <div class="hdr">
+    <div class="hdr-left">
+        <img src="Mono.png" class="hdr-logo" alt="Accountrivia">
+      <span class="hdr-title">Staff Portal</span>
+      <span class="hdr-badge">INTERNAL</span>
+    </div>
+    <div class="hdr-right">
+      <div class="hdr-user">
+        <strong id="hdr-name"></strong>
+        <span id="hdr-email"></span>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+
+  <!-- Layout -->
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="nav-section">
+        <div class="nav-label">Main</div>
+        <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">
+          <span class="icon">📊</span> Dashboard
+        </div>
+        <div class="nav-item" onclick="showPage('clients')" id="nav-clients">
+          <span class="icon">👥</span> Clients
+        </div>
+        <div class="nav-item" onclick="showPage('transactions')" id="nav-transactions">
+          <span class="icon">💳</span> Transactions
+        </div>
+        <div class="nav-item" onclick="showPage('responses')" id="nav-responses">
+          <span class="icon">✅</span> Responses
+        </div>
+      </div>
+      <div class="nav-section" id="admin-nav" style="display:none">
+        <div class="nav-label">Admin</div>
+        <div class="nav-item" onclick="showPage('staff')" id="nav-staff">
+          <span class="icon">🔐</span> Staff Accounts
+        </div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+
+      <!-- ── DASHBOARD ── -->
+      <div id="page-dashboard">
+        <div class="page-head">
+          <div><h1>Dashboard</h1><p>Overview of all client queries</p></div>
+          <button class="btn-sm btn-blue" onclick="loadDashboard()">&#8635; Refresh</button>
+        </div>
+        <div class="stats">
+          <div class="stat-card"><div class="num" id="stat-total">—</div><div class="lbl">Total clients</div></div>
+          <div class="stat-card"><div class="num" id="stat-pending">—</div><div class="lbl">Not yet sent</div></div>
+          <div class="stat-card"><div class="num" id="stat-sent">—</div><div class="lbl">Awaiting response</div></div>
+          <div class="stat-card"><div class="num" id="stat-responded">—</div><div class="lbl">Responded</div></div>
+        </div>
+        <div class="tbl-wrap">
+          <div class="tbl-toolbar"><h3>All Clients</h3></div>
+          <div id="dash-content"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+        </div>
+      </div>
+
+      <!-- ── CLIENTS ── -->
+      <div id="page-clients" style="display:none">
+        <div class="page-head">
+          <div><h1>Clients</h1><p>Add and manage client records</p></div>
+          <button class="btn-sm btn-blue" onclick="openAddClient()">+ Add client</button>
+        </div>
+        <div class="tbl-wrap">
+          <div class="tbl-toolbar">
+            <h3>Client list</h3>
+            <input class="search-input" placeholder="Search clients…" oninput="filterClients(this.value)">
+          </div>
+          <div id="clients-content"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+        </div>
+      </div>
+
+      <!-- ── TRANSACTIONS ── -->
+      <div id="page-transactions" style="display:none">
+        <div class="page-head">
+          <div><h1>Transactions</h1><p>Add and manage transactions to query</p></div>
+          <button class="btn-sm btn-blue" onclick="openAddTransaction()">+ Add transaction</button>
+        </div>
+        <div class="tbl-wrap">
+          <div class="tbl-toolbar">
+            <h3>All transactions</h3>
+            <input class="search-input" placeholder="Search…" oninput="filterTransactions(this.value)">
+          </div>
+          <div id="transactions-content"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+        </div>
+      </div>
+
+      <!-- ── RESPONSES ── -->
+      <div id="page-responses" style="display:none">
+        <div class="page-head">
+          <div><h1>Responses</h1><p>View client submissions</p></div>
+          <button class="btn-sm btn-outline" onclick="loadResponses()">&#8635; Refresh</button>
+        </div>
+        <div class="tbl-wrap">
+          <div class="tbl-toolbar">
+            <h3>Select a client to view their responses</h3>
+          </div>
+          <div id="responses-content">
+            <div style="padding:20px">
+              <div class="field-wrap" style="max-width:320px">
+                <label>Client</label>
+                <select id="res-client-select" onchange="loadClientResponses()">
+                  <option value="">— Select client —</option>
+                </select>
+              </div>
+            </div>
+            <div id="responses-data"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STAFF ── -->
+      <div id="page-staff" style="display:none">
+        <div class="page-head">
+          <div><h1>Staff Accounts</h1><p>Manage who can access this portal</p></div>
+          <button class="btn-sm btn-blue" onclick="openAddStaff()">+ Add staff</button>
+        </div>
+        <div class="tbl-wrap">
+          <div class="tbl-toolbar"><h3>Staff members</h3></div>
+          <div id="staff-content"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── MODALS ─────────────────────────────────────────────────── -->
+
+<!-- Add/Edit Client -->
+<div class="modal-bg" id="modal-client">
+  <div class="modal">
+    <h2 id="modal-client-title">Add client</h2>
+    <input type="hidden" id="cl-row">
+    <div class="field-wrap"><label>Client ID</label><input id="cl-id" placeholder="e.g. C-LON-0001"></div>
+    <div class="field-wrap"><label>Client name</label><input id="cl-name" placeholder="Full name"></div>
+    <div class="field-wrap"><label>Company name</label><input id="cl-company" placeholder="Ltd / LLP / Sole trader name"></div>
+    <div class="field-wrap"><label>Accounting period</label><input id="cl-period" placeholder="e.g. Period ended 31 March 2025"></div>
+    <div class="field-wrap"><label>Bank name</label><input id="cl-bank" placeholder="e.g. Barclays"></div>
+    <div class="field-wrap"><label>Staff name</label><input id="cl-staff-name" placeholder="Assigned staff member"></div>
+    <div class="field-wrap"><label>Staff email</label><input id="cl-staff-email" placeholder="staff@accountrivia.com"></div>
+    <div class="field-wrap"><label>Client email</label><input id="cl-client-email" placeholder="client@example.com"></div>
+    <div class="err-msg" id="cl-err"></div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-outline" onclick="closeModal('modal-client')">Cancel</button>
+      <button class="btn-sm btn-blue" id="cl-save-btn" onclick="saveClient()">Save client</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Transaction -->
+<div class="modal-bg" id="modal-tx">
+  <div class="modal">
+    <h2 id="modal-tx-title">Add transaction</h2>
+    <input type="hidden" id="tx-row">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field-wrap"><label>TX ID</label><input id="tx-id" placeholder="e.g. TX001"></div>
+      <div class="field-wrap"><label>Bank name</label><input id="tx-bank" placeholder="e.g. Barclays"></div>
+      <div class="field-wrap"><label>Account number</label><input id="tx-account" placeholder="12345678"></div>
+      <div class="field-wrap"><label>Currency</label>
+        <select id="tx-currency">
+          <option>GBP</option><option>USD</option><option>EUR</option><option>AED</option><option>Other</option>
+        </select>
+      </div>
+      <div class="field-wrap"><label>Date</label><input id="tx-date" type="date"></div>
+      <div class="field-wrap"><label>Amount</label><input id="tx-amount" type="number" step="0.01" placeholder="0.00"></div>
+    </div>
+    <div class="field-wrap"><label>Description (as on statement)</label><input id="tx-desc" placeholder="e.g. AMAZON MKTP GB*AB1234"></div>
+    <div class="field-wrap"><label>Type</label>
+      <select id="tx-type"><option value="In">Money In</option><option value="Out">Money Out</option></select>
+    </div>
+    <div class="field-wrap"><label>Staff notes (visible to client)</label><textarea id="tx-notes" placeholder="e.g. Please confirm what this purchase was for"></textarea></div>
+    <div class="err-msg" id="tx-err"></div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-outline" onclick="closeModal('modal-tx')">Cancel</button>
+      <button class="btn-sm btn-blue" id="tx-save-btn" onclick="saveTransaction()">Save transaction</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Staff -->
+<div class="modal-bg" id="modal-staff">
+  <div class="modal">
+    <h2 id="modal-staff-title">Add staff member</h2>
+    <input type="hidden" id="st-row">
+    <div class="field-wrap"><label>Full name</label><input id="st-name" placeholder="e.g. Bilal Ahmed"></div>
+    <div class="field-wrap"><label>Email (username)</label><input id="st-email" placeholder="bilal@accountrivia.com"></div>
+    <div class="field-wrap"><label>Password</label><input id="st-password" type="password" placeholder="Leave blank to keep existing"></div>
+    <div class="field-wrap"><label>Role</label>
+      <select id="st-role"><option value="Staff">Staff</option><option value="Admin">Admin</option></select>
+    </div>
+    <div class="field-wrap"><label>Status</label>
+      <select id="st-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+    </div>
+    <div class="err-msg" id="st-err"></div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-outline" onclick="closeModal('modal-staff')">Cancel</button>
+      <button class="btn-sm btn-blue" id="st-save-btn" onclick="saveStaff()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ================================================================
+//  CONFIG — paste your Apps Script Web App URL here
+// ================================================================
+var API = "https://script.google.com/macros/s/AKfycbyXhpGzKk3Bp9KEf1lFKDt2iIdroHeUH9o8KNeLdQ8pRwhAGY1gzPprHoLINzjlkIsa/exec";
+// ================================================================
+
+var SESSION = localStorage.getItem("aq_session") || "";
+var CURRENT_USER = JSON.parse(localStorage.getItem("aq_user") || "{}");
+var ALL_CLIENTS = [];
+var ALL_TRANSACTIONS = [];
+var ALL_STAFF = [];
+
+// ── Init ──────────────────────────────────────────────────────
+window.onload = function() {
+  if (SESSION) {
+    showApp();
+  } else {
+    document.getElementById("login-screen").style.display = "flex";
+  }
+};
+
+function showApp() {
+  document.getElementById("login-screen").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  document.getElementById("hdr-name").textContent = CURRENT_USER.name || "";
+  document.getElementById("hdr-email").textContent = CURRENT_USER.email || "";
+  if (CURRENT_USER.role === "Admin") {
+    document.getElementById("admin-nav").style.display = "block";
+  }
+  loadDashboard();
+}
+
+// ── Login ─────────────────────────────────────────────────────
+function doLogin() {
+  var email = document.getElementById("login-email").value.trim();
+  var pass  = document.getElementById("login-password").value;
+  var err   = document.getElementById("login-err");
+  var btn   = document.getElementById("login-btn");
+  if (!email || !pass) { err.textContent = "Please enter your email and password."; return; }
+  err.textContent = ""; btn.disabled = true; btn.textContent = "Signing in…";
+  api({ action: "login", email: email, password: pass }, false)
+    .then(function(d) {
+      if (d.error) { err.textContent = d.error; btn.disabled = false; btn.textContent = "Sign in"; return; }
+      SESSION = d.session;
+      CURRENT_USER = { name: d.name, email: d.email, role: d.role };
+      localStorage.setItem("aq_session", SESSION);
+      localStorage.setItem("aq_user", JSON.stringify(CURRENT_USER));
+      showApp();
+    })
+    .catch(function() { err.textContent = "Connection failed. Please try again."; btn.disabled = false; btn.textContent = "Sign in"; });
+}
+
+// ── Logout ────────────────────────────────────────────────────
+function doLogout() {
+  api({ action: "logout" }).finally(function() {
+    SESSION = ""; CURRENT_USER = {};
+    localStorage.removeItem("aq_session");
+    localStorage.removeItem("aq_user");
+    document.getElementById("app").style.display = "none";
+    document.getElementById("login-screen").style.display = "flex";
+    document.getElementById("login-password").value = "";
+  });
+}
+
+// ── Navigation ────────────────────────────────────────────────
+function showPage(name) {
+  ["dashboard","clients","transactions","responses","staff"].forEach(function(p) {
+    document.getElementById("page-"+p).style.display = p===name ? "block" : "none";
+    var n = document.getElementById("nav-"+p);
+    if (n) n.classList.toggle("active", p===name);
+  });
+  if (name === "clients")      loadClients();
+  if (name === "transactions") loadTransactions();
+  if (name === "responses")    loadResponses();
+  if (name === "staff")        loadStaff();
+}
+
+// ── Dashboard ─────────────────────────────────────────────────
+function loadDashboard() {
+  api({ action: "getDashboard" }).then(function(d) {
+    if (d.error) { showToast(d.error, true); return; }
+    ALL_CLIENTS = d.clients;
+    var pending=0, sent=0, responded=0;
+    d.clients.forEach(function(c) {
+      if (!c.token)                  pending++;
+      else if (c.status==="Sent")    sent++;
+      else if (c.status==="Responded") responded++;
+    });
+    document.getElementById("stat-total").textContent     = d.clients.length;
+    document.getElementById("stat-pending").textContent   = pending;
+    document.getElementById("stat-sent").textContent      = sent;
+    document.getElementById("stat-responded").textContent = responded;
+    renderDashTable(d.clients);
+  });
+}
+
+function renderDashTable(clients) {
+  var el = document.getElementById("dash-content");
+  if (!clients.length) { el.innerHTML = '<div class="empty"><div class="icon">📭</div><p>No clients yet. Go to Clients to add your first one.</p></div>'; return; }
+  var rows = clients.map(function(c) {
+    var statusBadge = !c.token ? '<span class="badge b-pending">Not sent</span>' :
+      c.status === "Responded" ? '<span class="badge b-responded">Responded</span>' :
+      '<span class="badge b-sent">Awaiting</span>';
+    var genBtn = !c.token || c.status !== "Responded"
+      ? '<button class="btn-sm btn-green" onclick="generateToken('+c.row+',\''+esc(c.clientName)+'\')" '+(c.status==="Responded"?'disabled':'')+'>&#9654; Generate &amp; Send</button>'
+      : '<span style="color:#94a3b8;font-size:12px">Completed</span>';
+    return '<tr><td><strong>'+esc(c.clientName)+'</strong><br><span style="color:#94a3b8;font-size:12px">'+esc(c.companyName)+'</span></td><td>'+esc(c.period)+'</td><td>'+esc(c.staffName)+'</td><td>'+statusBadge+'</td><td>'+c.txCount+' / '+c.resCount+' responded</td><td class="td-actions">'+genBtn+'</td></tr>';
+  }).join("");
+  el.innerHTML = '<table><thead><tr><th>Client</th><th>Period</th><th>Staff</th><th>Status</th><th>Transactions</th><th>Action</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+// ── Clients ───────────────────────────────────────────────────
+function loadClients() {
+  api({ action: "getDashboard" }).then(function(d) {
+    if (d.error) { showToast(d.error, true); return; }
+    ALL_CLIENTS = d.clients;
+    renderClientsTable(d.clients);
+    // Populate responses dropdown
+    var sel = document.getElementById("res-client-select");
+    sel.innerHTML = '<option value="">— Select client —</option>';
+    d.clients.filter(function(c){return c.token;}).forEach(function(c) {
+      var o = document.createElement("option");
+      o.value = c.token; o.textContent = c.clientName + " — " + c.companyName;
+      sel.appendChild(o);
+    });
+  });
+}
+
+function renderClientsTable(clients) {
+  var el = document.getElementById("clients-content");
+  if (!clients.length) { el.innerHTML = '<div class="empty"><div class="icon">👥</div><p>No clients yet. Click + Add client to get started.</p></div>'; return; }
+  var rows = clients.map(function(c) {
+    var statusBadge = !c.token ? '<span class="badge b-pending">Not sent</span>' :
+      c.status === "Responded" ? '<span class="badge b-responded">Responded</span>' :
+      '<span class="badge b-sent">Awaiting</span>';
+    return '<tr><td>'+esc(c.clientId)+'</td><td><strong>'+esc(c.clientName)+'</strong></td><td>'+esc(c.companyName)+'</td><td>'+esc(c.period)+'</td><td>'+esc(c.staffName)+'</td><td>'+statusBadge+'</td><td class="td-actions">'+
+      '<button class="btn-sm btn-outline" onclick=\'openEditClient('+JSON.stringify(c)+')\'>Edit</button>'+
+      '<button class="btn-sm btn-red" onclick="deleteClient('+c.row+',\''+esc(c.clientName)+'\')">Delete</button>'+
+      '</td></tr>';
+  }).join("");
+  el.innerHTML = '<table><thead><tr><th>ID</th><th>Name</th><th>Company</th><th>Period</th><th>Staff</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function filterClients(q) {
+  var f = ALL_CLIENTS.filter(function(c) {
+    return [c.clientName,c.companyName,c.clientId,c.staffName].join(" ").toLowerCase().indexOf(q.toLowerCase()) > -1;
+  });
+  renderClientsTable(f);
+}
+
+function openAddClient() {
+  document.getElementById("modal-client-title").textContent = "Add client";
+  document.getElementById("cl-row").value = "";
+  ["cl-id","cl-name","cl-company","cl-period","cl-bank","cl-staff-name","cl-staff-email","cl-client-email"].forEach(function(id){document.getElementById(id).value="";});
+  document.getElementById("cl-staff-name").value = CURRENT_USER.name || "";
+  document.getElementById("cl-staff-email").value = CURRENT_USER.email || "";
+  document.getElementById("cl-err").textContent = "";
+  openModal("modal-client");
+}
+
+function openEditClient(c) {
+  document.getElementById("modal-client-title").textContent = "Edit client";
+  document.getElementById("cl-row").value        = c.row;
+  document.getElementById("cl-id").value         = c.clientId;
+  document.getElementById("cl-name").value       = c.clientName;
+  document.getElementById("cl-company").value    = c.companyName;
+  document.getElementById("cl-period").value     = c.period;
+  document.getElementById("cl-bank").value       = c.bankName;
+  document.getElementById("cl-staff-name").value = c.staffName;
+  document.getElementById("cl-staff-email").value= c.staffEmail;
+  document.getElementById("cl-client-email").value=c.clientEmail;
+  document.getElementById("cl-err").textContent  = "";
+  openModal("modal-client");
+}
+
+function saveClient() {
+  var row = document.getElementById("cl-row").value;
+  var params = {
+    action:      row ? "editClient" : "addClient",
+    row:         row,
+    clientId:    document.getElementById("cl-id").value.trim(),
+    clientName:  document.getElementById("cl-name").value.trim(),
+    companyName: document.getElementById("cl-company").value.trim(),
+    period:      document.getElementById("cl-period").value.trim(),
+    bankName:    document.getElementById("cl-bank").value.trim(),
+    staffName:   document.getElementById("cl-staff-name").value.trim(),
+    staffEmail:  document.getElementById("cl-staff-email").value.trim(),
+    clientEmail: document.getElementById("cl-client-email").value.trim()
+  };
+  if (!params.clientName || !params.clientEmail) { document.getElementById("cl-err").textContent = "Client name and email are required."; return; }
+  var btn = document.getElementById("cl-save-btn"); btn.disabled = true; btn.textContent = "Saving…";
+  api(params).then(function(d) {
+    btn.disabled = false; btn.textContent = "Save client";
+    if (d.error) { document.getElementById("cl-err").textContent = d.error; return; }
+    closeModal("modal-client");
+    showToast(row ? "Client updated." : "Client added.");
+    loadClients(); loadDashboard();
+  });
+}
+
+function deleteClient(row, name) {
+  if (!confirm("Delete client \"" + name + "\"? This cannot be undone.")) return;
+  api({ action: "deleteClient", row: row }).then(function(d) {
+    if (d.error) { showToast(d.error, true); return; }
+    showToast("Client deleted."); loadClients(); loadDashboard();
+  });
+}
+
+// ── Transactions ──────────────────────────────────────────────
+function loadTransactions() {
+  api({ action: "getAllTransactions" }).then(function(d) {
+    if (d.error) { showToast(d.error, true); return; }
+    ALL_TRANSACTIONS = d.transactions;
+    renderTransactionsTable(d.transactions);
+  });
+}
+
+function renderTransactionsTable(txs) {
+  var el = document.getElementById("transactions-content");
+  if (!txs.length) { el.innerHTML = '<div class="empty"><div class="icon">💳</div><p>No transactions yet. Click + Add transaction to get started.</p></div>'; return; }
+  var rows = txs.map(function(t) {
+    var typeBadge = t.type === "In" ? '<span class="badge b-responded">In</span>' : '<span class="badge b-pending">Out</span>';
+    var tagged = t.token ? '<span style="color:#94a3b8;font-size:11px">Sent</span>' : '<span style="color:#059669;font-size:11px;font-weight:600">Ready</span>';
+    return '<tr><td>'+esc(t.txId)+'</td><td>'+esc(t.date)+'</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(t.description)+'</td><td>'+typeBadge+'</td><td style="text-align:right">'+esc(t.currency)+' '+esc(t.amount)+'</td><td>'+tagged+'</td><td class="td-actions">'+
+      '<button class="btn-sm btn-outline" onclick=\'openEditTransaction('+JSON.stringify(t)+')\'>Edit</button>'+
+      '<button class="btn-sm btn-red" onclick="deleteTransaction('+t.row+')">Delete</button>'+
+      '</td></tr>';
+  }).join("");
+  el.innerHTML = '<table><thead><tr><th>TX ID</th><th>Date</th><th>Description</th><th>Type</th><th style="text-align:right">Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function filterTransactions(q) {
+  var f = ALL_TRANSACTIONS.filter(function(t) {
+    return [t.txId,t.description,t.bankName].join(" ").toLowerCase().indexOf(q.toLowerCase()) > -1;
+  });
+  renderTransactionsTable(f);
+}
+
+function openAddTransaction() {
+  document.getElementById("modal-tx-title").textContent = "Add transaction";
+  document.getElementById("tx-row").value = "";
+  ["tx-id","tx-bank","tx-account","tx-date","tx-amount","tx-desc","tx-notes"].forEach(function(id){document.getElementById(id).value="";});
+  document.getElementById("tx-currency").value = "GBP";
+  document.getElementById("tx-type").value = "Out";
+  document.getElementById("tx-err").textContent = "";
+  openModal("modal-tx");
+}
+
+function openEditTransaction(t) {
+  document.getElementById("modal-tx-title").textContent = "Edit transaction";
+  document.getElementById("tx-row").value    = t.row;
+  document.getElementById("tx-id").value     = t.txId;
+  document.getElementById("tx-bank").value   = t.bankName;
+  document.getElementById("tx-account").value= t.accountNo;
+  document.getElementById("tx-currency").value=t.currency || "GBP";
+  document.getElementById("tx-date").value   = t.date ? t.date.split("/").reverse().join("-") : "";
+  document.getElementById("tx-amount").value = t.amount;
+  document.getElementById("tx-desc").value   = t.description;
+  document.getElementById("tx-type").value   = t.type || "Out";
+  document.getElementById("tx-notes").value  = t.staffNotes;
+  document.getElementById("tx-err").textContent = "";
+  openModal("modal-tx");
+}
+
+function saveTransaction() {
+  var row = document.getElementById("tx-row").value;
+  var rawDate = document.getElementById("tx-date").value;
+  var fmtDate = rawDate ? rawDate.split("-").reverse().join("/") : "";
+  var params = {
+    action:      row ? "editTransaction" : "addTransaction",
+    row:         row,
+    txId:        document.getElementById("tx-id").value.trim(),
+    bankName:    document.getElementById("tx-bank").value.trim(),
+    accountNo:   document.getElementById("tx-account").value.trim(),
+    currency:    document.getElementById("tx-currency").value,
+    date:        fmtDate,
+    description: document.getElementById("tx-desc").value.trim(),
+    type:        document.getElementById("tx-type").value,
+    amount:      document.getElementById("tx-amount").value.trim(),
+    staffNotes:  document.getElementById("tx-notes").value.trim()
+  };
+  if (!params.description || !params.amount) { document.getElementById("tx-err").textContent = "Description and amount are required."; return; }
+  var btn = document.getElementById("tx-save-btn"); btn.disabled = true; btn.textContent = "Saving…";
+  api(params).then(function(d) {
+    btn.disabled = false; btn.textContent = "Save transaction";
+    if (d.error) { document.getElementById("tx-err").textContent = d.error; return; }
+    closeModal("modal-tx");
+    showToast(row ? "Transaction updated." : "Transaction added.");
+    loadTransactions();
+  });
+}
+
+function deleteTransaction(row) {
+  if (!confirm("Delete this transaction? This cannot be undone.")) return;
+  api({ action: "deleteTransaction", row: row }).then(function(d) {
+    if (d.error) { showToast(d.error, true); return; }
+    showToast("Transaction deleted."); loadTransactions();
+  });
+}
+
+// ── Generate Token ────────────────────────────────────────────
+function generateToken(row, clientName) {
+  if (!confirm("Generate token and send email to client for \"" + clientName + "\"?")) return;
+  showToast("Generating token and sending email…");
+  api({ action: "generateToken", row: row }).then(function(d) {
+    if (d.error) { showToast(d.error, true); return; }
+    showToast("✓ Email sent to " + d.clientEmail + " with " + d.txCount + " transaction(s). Token: " + d.token);
+    loadDashboard(); loadClients(); loadTransactions();
+  });
+}
+
+// ── Responses ─────────────────────────────────────────────────
+function loadResponses() {
+  // Client select is populated in loadClients
+  if (!ALL_CLIENTS.length) loadClients();
+}
+
+function loadClientResponses() {
+  var token = document.getElementById("res-client-select").value;
+  var el    = document.getElementById("responses-data");
+  if (!token) { el.innerHTML = ""; return; }
+  el.innerHTML = '<div class="loading"><div class="spinner"></div>Loading…</div>';
+  api({ action: "getResponses", clientToken: token }).then(function(d) {
+    if (d.error) { showToast(d.error, true); return; }
+    if (!d.responses.length) { el.innerHTML = '<div class="empty"><p>No responses yet for this client.</p></div>'; return; }
+    var html = d.responses.map(function(r, i) {
+      return '<div class="res-row"><div><div class="res-label">#'+(i+1)+' — '+esc(r.date)+'</div><div class="res-val">'+esc(r.description)+'</div></div><div><div class="res-label">Category</div><div class="res-val res-cat">'+esc(r.category)+'</div>'+(r.notes?'<div class="res-label" style="margin-top:6px">Notes</div><div class="res-val">'+esc(r.notes)+'</div>':'')+'</div></div>';
+    }).join("");
+    el.innerHTML = '<div style="padding:16px 20px">'+html+'</div>';
+  });
+}
+
+// ── Staff ─────────────────────────────────────────────────────
+function loadStaff() {
+  api({ action: "getStaff" }).then(function(d) {
+    if (d.error) { showToast(d.error, true); return; }
+    ALL_STAFF = d.staff;
+    var el = document.getElementById("staff-content");
+    if (!d.staff.length) { el.innerHTML = '<div class="empty"><p>No staff found.</p></div>'; return; }
+    var rows = d.staff.map(function(s) {
+      return '<tr><td><strong>'+esc(s.name)+'</strong></td><td>'+esc(s.email)+'</td>'+
+        '<td><span class="badge '+(s.role==="Admin"?"b-admin":"b-staff")+'">'+esc(s.role)+'</span></td>'+
+        '<td><span class="badge '+(s.status==="Active"?"b-active":"b-inactive")+'">'+esc(s.status)+'</span></td>'+
+        '<td class="td-actions">'+
+          '<button class="btn-sm btn-outline" onclick=\'openEditStaff('+JSON.stringify(s)+')\'>Edit</button>'+
+          '<button class="btn-sm btn-red" onclick="deleteStaff('+s.row+',\''+esc(s.name)+'\')">Delete</button>'+
+        '</td></tr>';
+    }).join("");
+    el.innerHTML = '<table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  });
+}
+
+function openAddStaff() {
+  document.getElementById("modal-staff-title").textContent = "Add staff member";
+  document.getElementById("st-row").value = "";
+  ["st-name","st-email","st-password"].forEach(function(id){document.getElementById(id).value="";});
+  document.getElementById("st-role").value   = "Staff";
+  document.getElementById("st-status").value = "Active";
+  document.getElementById("st-err").textContent = "";
+  openModal("modal-staff");
+}
+
+function openEditStaff(s) {
+  document.getElementById("modal-staff-title").textContent = "Edit staff member";
+  document.getElementById("st-row").value    = s.row;
+  document.getElementById("st-name").value   = s.name;
+  document.getElementById("st-email").value  = s.email;
+  document.getElementById("st-password").value = "";
+  document.getElementById("st-role").value   = s.role;
+  document.getElementById("st-status").value = s.status;
+  document.getElementById("st-err").textContent = "";
+  openModal("modal-staff");
+}
+
+function saveStaff() {
+  var row = document.getElementById("st-row").value;
+  var params = {
+    action:   row ? "editStaff" : "addStaff",
+    row:      row,
+    name:     document.getElementById("st-name").value.trim(),
+    email:    document.getElementById("st-email").value.trim().toLowerCase(),
+    password: document.getElementById("st-password").value,
+    role:     document.getElementById("st-role").value,
+    status:   document.getElementById("st-status").value
+  };
+  if (!params.name || !params.email) { document.getElementById("st-err").textContent = "Name and email are required."; return; }
+  if (!row && !params.password) { document.getElementById("st-err").textContent = "Password is required for new staff."; return; }
+  var btn = document.getElementById("st-save-btn"); btn.disabled = true; btn.textContent = "Saving…";
+  api(params).then(function(d) {
+    btn.disabled = false; btn.textContent = "Save";
+    if (d.error) { document.getElementById("st-err").textContent = d.error; return; }
+    closeModal("modal-staff"); showToast(row ? "Staff member updated." : "Staff member added."); loadStaff();
+  });
+}
+
+function deleteStaff(row, name) {
+  if (!confirm("Delete staff member \"" + name + "\"?")) return;
+  api({ action: "deleteStaff", row: row }).then(function(d) {
+    if (d.error) { showToast(d.error, true); return; }
+    showToast("Staff member deleted."); loadStaff();
+  });
+}
+
+// ── API helper ────────────────────────────────────────────────
+function api(params, withSession) {
+  if (withSession !== false) params.session = SESSION;
+  var url = API + "?" + Object.keys(params).map(function(k) {
+    return encodeURIComponent(k) + "=" + encodeURIComponent(params[k] || "");
+  }).join("&");
+  return fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.error === "SESSION_EXPIRED") {
+        SESSION = ""; localStorage.removeItem("aq_session"); localStorage.removeItem("aq_user");
+        document.getElementById("app").style.display = "none";
+        document.getElementById("login-screen").style.display = "flex";
+        showToast("Session expired. Please sign in again.", true);
+      }
+      return d;
+    });
+}
+
+// ── Modal helpers ─────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add("open"); }
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+document.querySelectorAll(".modal-bg").forEach(function(m) {
+  m.addEventListener("click", function(e) { if (e.target === m) m.classList.remove("open"); });
+});
+
+// ── Toast ─────────────────────────────────────────────────────
+var toastTimer;
+function showToast(msg, isErr) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast show" + (isErr ? " err" : "");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { t.className = "toast"; }, isErr ? 5000 : 3000);
+}
+
+// ── Utils ─────────────────────────────────────────────────────
+function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+</script>
+</body>
+</html>
