@@ -435,14 +435,14 @@ function loadDashboard() {
 
     var el = document.getElementById("dash-content");
     if (!d.clients.length) { el.innerHTML = '<div class="empty"><div class="icon">📭</div><p>No clients yet.</p></div>'; return; }
-    var rows = d.clients.map(function(c) {
+    var rows = d.clients.map(function(c, idx) {
       var sb = !c.token ? '<span class="badge b-pending">Not sent</span>' :
         c.status==="Responded" ? '<span class="badge b-responded">Responded</span>' :
         '<span class="badge b-sent">Awaiting</span>';
       return '<tr><td><strong>'+esc(c.clientName)+'</strong><br><span style="color:#94a3b8;font-size:12px">'+esc(c.companyName)+'</span></td>' +
         '<td>'+esc(c.period)+'</td><td>'+esc(c.staffName)+'</td><td>'+sb+'</td>' +
         '<td>'+c.txCount+' txns</td>' +
-        '<td class="td-actions"><button class="btn-sm btn-outline" onclick="openClientTransactions('+JSON.stringify(c).replace(/'/g,"&#39;")+')" >Manage</button></td></tr>';
+        '<td class="td-actions"><button class="btn-sm btn-outline" onclick="openClientByIndex('+idx+')">Manage</button></td></tr>';
     }).join("");
     el.innerHTML = '<table><thead><tr><th>Client</th><th>Period</th><th>Staff</th><th>Status</th><th>Transactions</th><th>Action</th></tr></thead><tbody>'+rows+'</tbody></table>';
   });
@@ -910,6 +910,16 @@ function deleteStaff(row, name) {
     if (d.error) { showToast(d.error, true); return; }
     showToast("Staff deleted."); loadStaff();
   });
+}
+
+// ── Client index helpers ──────────────────────────────────────
+function openClientByIndex(idx) {
+  var c = ALL_CLIENTS[idx];
+  if (c) openClientTransactions(c);
+}
+function openEditClientByIndex(idx) {
+  var c = ALL_CLIENTS[idx];
+  if (c) openEditClient(c);
 }
 
 // ── API ───────────────────────────────────────────────────────
