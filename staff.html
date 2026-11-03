@@ -301,7 +301,7 @@ tr:hover td{background:#fafbfc}
     <input type="hidden" id="cl-row">
     <div class="grid2">
       <div class="field-wrap"><label>Client ID</label><input id="cl-id" placeholder="e.g. C-LON-0001"></div>
-      <div class="field-wrap"><label>Bank name</label><input id="cl-bank" placeholder="e.g. Barclays"></div>
+      <div class="field-wrap"><label>Main bank (optional)</label><input id="cl-bank" placeholder="e.g. Barclays"></div>
     </div>
     <div class="field-wrap"><label>Client name</label><input id="cl-name" placeholder="Full name"></div>
     <div class="field-wrap"><label>Company name</label><input id="cl-company" placeholder="Ltd / LLP / Sole trader name"></div>
@@ -412,6 +412,7 @@ var SESSION      = localStorage.getItem("aq_session") || "";
 var CURRENT_USER = JSON.parse(localStorage.getItem("aq_user") || "{}");
 var ALL_CLIENTS  = [];
 var CURRENT_CLIENT = null;
+var CURRENT_TXS = [];
 var PASTE_ROWS = [], PASTE_HEADERS = [];
 
 window.onload = function() {
@@ -500,7 +501,7 @@ function loadDashboard() {
         c.status === "Responded" ? '<span class="badge b-responded">Responded</span>' :
         '<span class="badge b-sent">Awaiting</span>';
       return '<tr><td><strong>'+esc(c.clientName)+'</strong><br><span style="color:#94a3b8;font-size:12px">'+esc(c.companyName)+'</span></td>' +
-        '<td>'+esc(c.period)+'</td><td>'+esc(c.staffName)+'</td><td>'+sb+'</td>' +
+        '<td>'+esc(fmtPeriod(c.period))+'</td><td>'+esc(c.staffName)+'</td><td>'+sb+'</td>' +
         '<td>'+c.txCount+' txns</td>' +
         '<td class="td-actions"><button class="btn-sm btn-outline" onclick="openClientByIndex('+idx+')">Manage</button></td></tr>';
     }).join("");
@@ -528,7 +529,7 @@ function renderClientsTable(clients) {
       '<td>'+esc(c.clientId)+'</td>' +
       '<td><strong>'+esc(c.clientName)+'</strong></td>' +
       '<td>'+esc(c.companyName)+'</td>' +
-      '<td>'+esc(c.period)+'</td>' +
+      '<td>'+esc(fmtPeriod(c.period))+'</td>' +
       '<td>'+esc(c.staffName)+'</td>' +
       '<td>'+sb+'</td>' +
       '<td>'+c.txCount+' txns</td>' +
@@ -564,7 +565,7 @@ function openEditClient(c) {
   document.getElementById("cl-id").value           = c.clientId;
   document.getElementById("cl-name").value         = c.clientName;
   document.getElementById("cl-company").value      = c.companyName;
-  document.getElementById("cl-period").value       = c.period;
+  document.getElementById("cl-period").value       = fmtPeriod(c.period);
   document.getElementById("cl-bank").value         = c.bankName;
   document.getElementById("cl-staff-name").value   = c.staffName;
   document.getElementById("cl-staff-email").value  = c.staffEmail;
@@ -604,12 +605,45 @@ function deleteClient(row, name) {
   });
 }
 
+// ── Bank account + period helpers ──────────────────────────────
+// Accounting period may come back from the sheet as a real date (ISO string)
+function fmtPeriod(p) {
+  var s = String(p || "");
+  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+    var d = new Date(s);
+    if (!isNaN(d)) return d.toLocaleDateString("en-GB", { day:"numeric", month:"long", year:"numeric", timeZone:"Europe/London" });
+  }
+  return s;
+}
+// "Barclays · 83242145" (either part may be blank)
+function bankLabel(bank, acc) {
+  bank = String(bank || "").trim(); acc = String(acc || "").trim();
+  return bank && acc ? bank + " · " + acc : (bank || acc);
+}
+// Split one Excel cell like "Barclays 83242145" / "Monzo - 79755244" / "NatWest (123456)"
+// into bank name + account number (account = trailing number, 4+ digits)
+function splitBankAccount(v) {
+  v = String(v || "").trim();
+  var m = v.match(/^(.*?)[\s\-–—:|,(#]*((?:\d[\d\s\-]{2,}\d))\)?\s*$/);
+  if (m && m[2].replace(/\D/g,"").length >= 4) return { bankName: m[1].trim(), accountNo: m[2].replace(/\s+/g,"") };
+  return { bankName: v, accountNo: "" };
+}
+// Distinct bank accounts used by a list of transactions
+function distinctAccounts(txs) {
+  var seen = {}, out = [];
+  txs.forEach(function(t) {
+    var l = bankLabel(t.bankName, t.accountNo);
+    if (l && !seen[l.toLowerCase()]) { seen[l.toLowerCase()] = 1; out.push(l); }
+  });
+  return out;
+}
+
 // ── Transactions ───────────────────────────────────────────────
 function openClientTransactions(client) {
   CURRENT_CLIENT = client;
   document.getElementById("tx-client-name").textContent = client.clientName + " — " + client.companyName;
   document.getElementById("tx-page-title").textContent  = client.clientName + " — Transactions";
-  document.getElementById("tx-page-sub").textContent    = client.period + " · " + client.bankName;
+  document.getElementById("tx-page-sub").textContent    = fmtPeriod(client.period) + (client.bankName ? " · " + client.bankName : "");
   document.getElementById("tx-tbl-title").textContent   = "Transactions for " + client.clientName;
   var genBtn = document.getElementById("gen-btn");
   genBtn.disabled = client.status === "Responded";
@@ -627,6 +661,10 @@ function loadClientTransactions() {
     var txs = d.transactions.filter(function(t) {
       return clientToken ? t.token === clientToken : !t.token;
     });
+    CURRENT_TXS = txs;
+    var accts = distinctAccounts(txs);
+    document.getElementById("tx-page-sub").textContent =
+      fmtPeriod(CURRENT_CLIENT.period) + " · " + (accts.length ? accts.join("  |  ") : (CURRENT_CLIENT.bankName || "No bank account yet"));
     renderTransactionsTable(txs);
   });
 }
@@ -642,7 +680,8 @@ function renderTransactionsTable(txs) {
     var sb = t.token ? '<span class="badge b-tagged">Sent</span>' : '<span class="badge b-ready">Ready</span>';
     return '<tr>' +
       '<td>'+esc(t.txId)+'</td>' +
-      '<td>'+esc(t.date)+'</td>' +
+      '<td style="white-space:nowrap">'+esc(t.date)+'</td>' +
+      '<td style="white-space:nowrap"><div style="font-weight:600">'+esc(t.bankName||"—")+'</div><div style="font-size:12px;color:#64748b">'+esc(t.accountNo||"")+'</div></td>' +
       '<td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+esc(t.description)+'">'+esc(t.description)+'</td>' +
       '<td>'+tb+'</td>' +
       '<td style="text-align:right">'+esc(t.currency)+' '+esc(String(t.amount))+'</td>' +
@@ -653,14 +692,16 @@ function renderTransactionsTable(txs) {
         '<button class="btn-sm btn-red" onclick="deleteTransaction('+t.row+')">Delete</button>' +
       '</td></tr>';
   }).join("");
-  el.innerHTML = '<table><thead><tr><th>TX ID</th><th>Date</th><th>Description</th><th>Type</th><th style="text-align:right">Amount</th><th>Staff Note</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  el.innerHTML = '<table><thead><tr><th>TX ID</th><th>Date</th><th>Bank account</th><th>Description</th><th>Type</th><th style="text-align:right">Amount</th><th>Staff Note</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
 
 function openAddTransaction() {
   document.getElementById("modal-tx-title").textContent = "Add transaction";
   document.getElementById("tx-row").value = "";
   ["tx-id","tx-bank","tx-account","tx-date","tx-amount","tx-desc","tx-notes"].forEach(function(id){document.getElementById(id).value="";});
-  if (CURRENT_CLIENT) document.getElementById("tx-bank").value = CURRENT_CLIENT.bankName || "";
+  var lastTx = CURRENT_TXS.length ? CURRENT_TXS[CURRENT_TXS.length-1] : null;
+  document.getElementById("tx-bank").value    = lastTx ? (lastTx.bankName || "") : (CURRENT_CLIENT ? CURRENT_CLIENT.bankName || "" : "");
+  document.getElementById("tx-account").value = lastTx ? (lastTx.accountNo || "") : "";
   document.getElementById("tx-currency").value = "GBP";
   document.getElementById("tx-type").value = "Out";
   document.getElementById("tx-err").textContent = "";
@@ -738,6 +779,7 @@ var FIELD_OPTIONS = [
   { value: "description", label: "Description" },
   { value: "type", label: "Type (In/Out)" },
   { value: "amount", label: "Amount" },
+  { value: "bankAccount", label: "Bank + account no." },
   { value: "bankName", label: "Bank name" },
   { value: "accountNo", label: "Account number" },
   { value: "currency", label: "Currency" },
@@ -772,6 +814,7 @@ function parsePaste() {
     else if (lower.includes("desc")||lower.includes("narr")||lower.includes("detail")) autoMap[i]="description";
     else if (lower.includes("type")||lower.includes("dr/cr"))       autoMap[i]="type";
     else if (lower.includes("amount")||lower.includes("value"))     autoMap[i]="amount";
+    else if (lower.includes("bank") && (lower.includes("acc") || lower.includes("a/c"))) autoMap[i]="bankAccount";
     else if (lower.includes("bank"))                                autoMap[i]="bankName";
     else if (lower.includes("account")||lower.includes("acc"))      autoMap[i]="accountNo";
     else if (lower.includes("currency")||lower.includes("curr"))    autoMap[i]="currency";
@@ -808,7 +851,7 @@ function importPasted() {
     var sel = document.getElementById("map-"+i);
     if (sel && sel.value) mapping[sel.value] = i;
   });
-  if (!mapping.description && !mapping.amount) { document.getElementById("paste-err").textContent = "Please map at least Description and Amount."; return; }
+  if (mapping.description === undefined && mapping.amount === undefined) { document.getElementById("paste-err").textContent = "Please map at least Description and Amount."; return; }
   var btn = document.getElementById("paste-import-btn"); btn.disabled=true; btn.textContent="Importing…";
   var idx = 0, errors = 0;
   function saveNext() {
@@ -819,14 +862,15 @@ function importPasted() {
       loadClientTransactions(); return;
     }
     var r = PASTE_ROWS[idx]; idx++;
+    var combo = mapping.bankAccount !== undefined ? splitBankAccount(r[mapping.bankAccount]) : null;
     var rawDate = mapping.date !== undefined ? r[mapping.date] || "" : "";
     var fmtDate = rawDate;
     if (rawDate) { var m = rawDate.match(/^(\d{4})[\/\-](\d{2})[\/\-](\d{2})$/); if (m) fmtDate = m[3]+"/"+m[2]+"/"+m[1]; }
     api({
       action: "addTransaction",
       txId:        mapping.txId        !== undefined ? r[mapping.txId]        : ("TX"+idx),
-      bankName:    mapping.bankName     !== undefined ? r[mapping.bankName]    : (CURRENT_CLIENT ? CURRENT_CLIENT.bankName : ""),
-      accountNo:   mapping.accountNo    !== undefined ? r[mapping.accountNo]   : "",
+      bankName:    mapping.bankName     !== undefined ? r[mapping.bankName]    : (combo ? combo.bankName : (CURRENT_CLIENT ? CURRENT_CLIENT.bankName : "")),
+      accountNo:   mapping.accountNo    !== undefined ? r[mapping.accountNo]   : (combo ? combo.accountNo : ""),
       currency:    mapping.currency     !== undefined ? r[mapping.currency]    : "GBP",
       date:        fmtDate,
       description: mapping.description  !== undefined ? r[mapping.description] : "",

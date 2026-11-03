@@ -106,7 +106,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
       <div class="meta-item"><label>Company</label><span id="m-co"></span></div>
       <div class="meta-item"><label>Client ID</label><span id="m-id"></span></div>
       <div class="meta-item"><label>Accounting period</label><span id="m-period"></span></div>
-      <div class="meta-item"><label>Bank</label><span id="m-bank"></span></div>
+      <div class="meta-item"><label>Bank account(s)</label><span id="m-bank"></span></div>
       <div class="meta-item"><label>Your accountant</label><span id="m-staff"></span></div>
     </div>
   </div>
@@ -172,13 +172,20 @@ function loadData(){
     .catch(function(){show("token-screen");document.getElementById("token-err").textContent="Connection failed. Please try again or contact your accountant.";document.getElementById("load-btn").disabled=false;});
 }
 
+function bankLabel(bank,acc){
+  bank=String(bank||"").trim(); acc=String(acc||"").trim();
+  return bank&&acc ? bank+" · "+acc : (bank||acc);
+}
 function fillMeta(c){
   document.getElementById("hdr-info").innerHTML='<div style="font-weight:600;color:#1e293b">'+esc(c.clientName)+'</div><div>'+esc(c.accountingPeriod)+'</div>';
   document.getElementById("m-name").textContent=c.clientName||"—";
   document.getElementById("m-co").textContent=c.companyName||"—";
   document.getElementById("m-id").textContent=c.clientId||"—";
   document.getElementById("m-period").textContent=c.accountingPeriod||"—";
-  document.getElementById("m-bank").textContent=c.bankName||"—";
+  // Bank accounts come from the transactions themselves (a client can have several)
+  var seen={}, accts=[];
+  (txData||[]).forEach(function(t){ var l=bankLabel(t.bankName,t.accountNo); if(l&&!seen[l.toLowerCase()]){seen[l.toLowerCase()]=1;accts.push(l);} });
+  document.getElementById("m-bank").textContent=accts.length?accts.join(", "):(c.bankName||"—");
   document.getElementById("m-staff").textContent=c.staffName||"—";
 }
 
@@ -200,8 +207,7 @@ function buildCards(){
       '</div>'+
       '<div class="tx-meta">'+
         '<span><b>Date</b> '+esc(tx.date)+'</span>'+
-        '<span><b>Bank</b> '+esc(tx.bankName)+'</span>'+
-        '<span><b>Account</b> '+esc(tx.accountNo)+'</span>'+
+        '<span><b>Bank account</b> '+esc(bankLabel(tx.bankName,tx.accountNo)||"—")+'</span>'+
         '<span><b>Ref</b> '+esc(tx.txId)+'</span>'+
       '</div>'+
       '<div class="tx-body">'+
