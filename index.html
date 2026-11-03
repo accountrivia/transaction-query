@@ -242,8 +242,8 @@ function submitAll(){
   document.getElementById("val-err").style.display="none";
   var btn=document.getElementById("sub-btn");
   btn.disabled=true;btn.textContent="Submitting…";
-  var url=API+"?action=submit&token="+encodeURIComponent(TOKEN)+"&responses="+encodeURIComponent(JSON.stringify(responses));
-  fetch(url)
+  // Sent as a POST body (text/plain avoids a CORS preflight) so long submissions aren't cut off by URL limits
+  fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({token:TOKEN,responses:responses})})
     .then(function(r){return r.json();})
     .then(function(d){
       if(d.success){
